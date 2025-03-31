@@ -1,6 +1,7 @@
-import { getApp, initializeApp } from "firebase-admin/app"
-import {getFirestore} from "firebase-admin/firestore"
-import {getAuth} from "firebase-admin/auth"
+import { getApp, getApps, initializeApp } from "firebase/app";
+// import { getAnalytics } from "firebase/analytics";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 const firebaseConfig = {
   apiKey: "AIzaSyC0vugc9fu83Vk7YZK8h6ePAvHLvXfIHWU",
   authDomain: "prepwise-d88fe.firebaseapp.com",

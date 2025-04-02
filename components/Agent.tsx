@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
+import { vapi } from "@/lib/vapi.sdk";
 
 enum CallStatus {
   INACTIVE = "INACTIVE",
@@ -42,6 +43,8 @@ const Agent = ({
     };
 
     const onMessage = (message: Message) => {
+      const onCallStart = () => setCallStatus(CallStatus.ACTIVE);
+      const onCallEnd = () => setCallStatus(CallStatus.FINISHED);
       if (message.type === "transcript" && message.transcriptType === "final") {
         const newMessage = { role: message.role, content: message.transcript };
         setMessages((prev) => [...prev, newMessage]);
@@ -62,7 +65,20 @@ const Agent = ({
       console.log("Error:", error);
     };
 
-  
+    vapi.on("call-start", onCallStart);
+    vapi.on("call-end", onCallEnd);
+    vapi.on("message", onMessage);
+    vapi.on("speech-start", onSpeechStart);
+    vapi.on("speech-end", onSpeechEnd);
+    vapi.on("error", onError);
+    return () => {
+      vapi.off("call-start", onCallStart);
+      vapi.off("call-end", onCallEnd);
+      vapi.off("message", onMessage);
+      vapi.off("speech-start", onSpeechStart);
+      vapi.on("speech-end", onSpeechEnd);
+      vapi.off("error", onError);
+    };
   }, []);
 
   useEffect(() => {
@@ -70,29 +86,26 @@ const Agent = ({
       setLastMessage(messages[messages.length - 1].content);
     }
 
-    const handleGenerateFeedback = async (messages: SavedMessage[]) => {
-      console.log("handleGenerateFeedback");
-
-   
-    };
-
     if (callStatus === CallStatus.FINISHED) {
       if (type === "generate") {
         router.push("/");
-      } else {
-        handleGenerateFeedback(messages);
       }
     }
   }, [messages, callStatus, feedbackId, interviewId, router, type, userId]);
 
   const handleCall = async () => {
     setCallStatus(CallStatus.CONNECTING);
-
-   
+    await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
+      variableValues: {
+        userName: userName,
+        userid: userId,
+      },
+    });
   };
 
   const handleDisconnect = () => {
-  
+    setCallStatus(CallStatus.FINISHED);
+    vapi.stop();
   };
 
   return (
